@@ -93,6 +93,7 @@ func (ve ValidationError) Error() string {
 	return fmt.Sprintf("%s: %s", code, ve.Message)
 }
 
+// Reads XLIFF Document from disk
 func FromFile(path string) (Document, error) {
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
@@ -105,6 +106,22 @@ func FromFile(path string) (Document, error) {
 	}
 
 	return document, nil
+}
+
+// Writes XLIFF Document to disk
+func ToFile(path string, document *Document) error {
+
+	data, err := xml.Marshal(document)
+	if err != nil {
+		return err
+	}
+
+	err = ioutil.WriteFile(path, data, 0664)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // Returns true if the document passes some basic consistency checks.

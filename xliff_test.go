@@ -22,6 +22,18 @@ func Test_Parse(t *testing.T) {
 	}
 }
 
+func Test_Save(t *testing.T) {
+	doc, err := xliff.FromFile("testdata/focus-ios-ar.xliff")
+	if err != nil {
+		t.Error("Could not parse testdata/focus-ios-ar.xliff:", err)
+	}
+
+	// save file back to disk
+	if err := xliff.ToFile("testdata/focus-ios-ar-duplicate.xliff", &doc); err != nil {
+		t.Error("Could not save document to testdata/focus-ios-ar-duplicate.xliff:", err)
+	}
+}
+
 func Test_ParseNonExistentFile(t *testing.T) {
 	if _, err := xliff.FromFile("testdata/doesnotexist.xliff"); !os.IsNotExist(err) {
 		t.Error("Unexpected error when opening testdata/doesnotexist.xliff:", err)
@@ -39,6 +51,28 @@ func Test_ValidateGood(t *testing.T) {
 	doc, err := xliff.FromFile("testdata/good.xliff")
 	if err != nil {
 		t.Error("Could not parse testdata/good.xliff:", err)
+	}
+
+	if errors := doc.Validate(); errors != nil {
+		t.Error("Unexpected error from Validate()")
+	}
+}
+
+func Test_ValidateGoodSave(t *testing.T) {
+	doc, err := xliff.FromFile("testdata/good.xliff")
+	if err != nil {
+		t.Error("Could not parse testdata/good.xliff:", err)
+	}
+
+	// save file back to disk
+	if err := xliff.ToFile("testdata/good-duplicate.xliff", &doc); err != nil {
+		t.Error("Could not save document to testdata/good-duplicate.xliff:", err)
+	}
+
+	// re-read it
+	doc, err = xliff.FromFile("testdata/good-duplicate.xliff")
+	if err != nil {
+		t.Error("Could not parse testdata/good-duplicate.xliff:", err)
 	}
 
 	if errors := doc.Validate(); errors != nil {

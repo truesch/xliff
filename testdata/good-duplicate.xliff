@@ -1,0 +1,26 @@
+<Document version="1.2">
+    <file original="One.strings" source-language="en" datatype="plaintext" target-language="nl">
+        <header>
+            <tool tool-id="com.apple.dt.xcode" tool-name="Xcode" tool-version="8.2.1" build-num="8C1002"></tool>
+        </header>
+        <body>
+            <trans-unit id="HelloWorld">
+                <source>Hello, world!</source>
+                <target>Hallo, wereld!</target>
+                <note></note>
+            </trans-unit>
+        </body>
+    </file>
+    <file original="Two.strings" source-language="en" datatype="plaintext" target-language="nl">
+        <header>
+            <tool tool-id="com.apple.dt.xcode" tool-name="Xcode" tool-version="8.2.1" build-num="8C1002"></tool>
+        </header>
+        <body>
+            <trans-unit id="CheeseSandwhich">
+                <source>Cheese sandwich</source>
+                <target>Broodje kaas</target>
+                <note></note>
+            </trans-unit>
+        </body>
+    </file>
+</Document>
