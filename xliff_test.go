@@ -30,7 +30,7 @@ func Test_Save(t *testing.T) {
 	}
 
 	// save file back to disk
-	if err := xliff.ToFile("testdata/focus-ios-ar-duplicate.xliff", &doc); err != nil {
+	if err := doc.ToFile("testdata/focus-ios-ar-duplicate.xliff"); err != nil {
 		t.Error("Could not save document to testdata/focus-ios-ar-duplicate.xliff:", err)
 	}
 }
@@ -66,7 +66,7 @@ func Test_ValidateGoodSave(t *testing.T) {
 	}
 
 	// save file back to disk
-	if err := xliff.ToFile("testdata/good-duplicate.xliff", &doc); err != nil {
+	if err := doc.ToFile("testdata/good-duplicate.xliff"); err != nil {
 		t.Error("Could not save document to testdata/good-duplicate.xliff:", err)
 	}
 
@@ -181,4 +181,22 @@ func Test_File(t *testing.T) {
 	if _, found := doc.File("Unknown.strings"); found != false {
 		t.Error("Unexpected result from doc.File(Unknown.strings)")
 	}
+}
+
+func Test_CreateEmptyXLIFF(t *testing.T) {
+	file := xliff.File{
+		Datatype:       "plaintext",
+		SourceLanguage: "de",
+		TargetLanguage: "en",
+		Header:         xliff.Header{},
+		Body:           xliff.Body{},
+	}
+	doc := xliff.Document{
+		Version: "1.2",
+		Files:   []xliff.File{file},
+	}
+
+	doc.ToFile("testdata/testfile.xliff")
+
+	doc.Validate()
 }

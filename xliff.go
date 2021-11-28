@@ -11,7 +11,7 @@ import (
 )
 
 type DocumentExport struct {
-	Document
+	*Document
 	XMLName        xml.Name `xml:"xliff"`
 	Xmlns          string   `xml:"xmlns,attr"`
 	Xsi            string   `xml:"xmlns:xsi,attr"`
@@ -117,9 +117,9 @@ func FromFile(path string) (Document, error) {
 }
 
 // Writes XLIFF Document to disk
-func ToFile(path string, document *Document) error {
+func (d *Document) ToFile(path string) error {
 	xliff := &DocumentExport{
-		Document:       *document,
+		Document:       d,
 		Xmlns:          "urn:oasis:names:tc:xliff:document:1.2",
 		Xsi:            "http://www.w3.org/2001/XMLSchema-instance",
 		SchemaLocation: "urn:oasis:names:tc:xliff:document:1.2 http://docs.oasis-open.org/xliff/v1.2/os/xliff-core-1.2-strict.xsd",
