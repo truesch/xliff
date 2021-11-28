@@ -5,6 +5,7 @@
 package xliff_test
 
 import (
+	"bytes"
 	"encoding/xml"
 	"os"
 	"strings"
@@ -69,15 +70,17 @@ func Test_ValidateGoodSave(t *testing.T) {
 		t.Error("Could not save document to testdata/good-duplicate.xliff:", err)
 	}
 
-	// re-read it
-	doc, err = xliff.FromFile("testdata/good-duplicate.xliff")
+	// re-read duplicate
+	duplicate, err := xliff.FromFile("testdata/good-duplicate.xliff")
 	if err != nil {
 		t.Error("Could not parse testdata/good-duplicate.xliff:", err)
 	}
 
-	if errors := doc.Validate(); errors != nil {
-		t.Error("Unexpected error from Validate()")
-	}
+	// compare if original and duplicate are identical
+	o, _ := xml.Marshal(doc)
+	d, _ := xml.Marshal(duplicate)
+
+	bytes.Compare(o, d)
 }
 
 func containsValidationError(t *testing.T, errors []xliff.ValidationError, code xliff.ValidationErrorCode) bool {
