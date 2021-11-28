@@ -1,1 +1,1 @@
-module github.com/st3fan/xliff
+module github.com/truesch/xliff
