@@ -11,10 +11,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/st3fan/xliff"
+	"github.com/truesch/xliff"
 )
 
-func Test_Parse(t *testing.T) {
+func TestParse(t *testing.T) {
 	if _, err := xliff.FromFile("testdata/focus-ios-ar.xliff"); err != nil {
 		t.Error("Could not parse testdata/focus-ios-ar.xliff:", err)
 	}
@@ -196,7 +196,38 @@ func Test_CreateEmptyXLIFF(t *testing.T) {
 		Files:   []xliff.File{file},
 	}
 
-	doc.ToFile("testdata/testfile.xliff")
-
 	doc.Validate()
+}
+
+func Test_CreateXLIFF(t *testing.T) {
+	file := xliff.File{
+		Datatype:       "plaintext",
+		SourceLanguage: "de",
+		TargetLanguage: "en",
+		Header:         xliff.Header{},
+		Body:           xliff.Body{},
+	}
+	doc := xliff.Document{
+		Version: "1.2",
+		Files:   []xliff.File{file},
+	}
+
+	tu := xliff.TransUnit{
+		ID:     "0",
+		Source: "Hallo Welt",
+		Target: "Hello World",
+		Note:   "Some Comment",
+	}
+
+	tu2 := xliff.TransUnit{
+		ID:     "1",
+		Source: "Auf Wiedersehen, Welt",
+		Target: "Goodbye World",
+		Note:   "Some Comment",
+	}
+
+	doc.Files[0].Body.TransUnits = []xliff.TransUnit{tu, tu2}
+
+	doc.ToFile("testdata/test.xliff")
+
 }
