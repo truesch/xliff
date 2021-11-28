@@ -229,5 +229,15 @@ func Test_CreateXLIFF(t *testing.T) {
 	doc.Files[0].Body.TransUnits = []xliff.TransUnit{tu, tu2}
 
 	doc.ToFile("testdata/test.xliff")
+}
 
+func Test_CreateXLIFFBuiltIn(t *testing.T) {
+	doc := xliff.NewDocument("de", "en")
+	doc.AddTransUnit("Hallo Welt")
+
+	doc.Validate()
+
+	doc.AddTransUnit("Wie geht es dir?", xliff.WithNote("This is a test."), xliff.WithTarget("How are you?"))
+
+	doc.ToFile("testdata/test_built_in.xliff")
 }

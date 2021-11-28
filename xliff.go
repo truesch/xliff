@@ -6,8 +6,10 @@ package xliff
 
 import (
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"io/ioutil"
+	"strconv"
 )
 
 type DocumentExport struct {
@@ -47,73 +49,35 @@ type Body struct {
 	TransUnits []TransUnit `xml:"trans-unit"`
 }
 
-type TransUnit struct {
-	ID     string `xml:"id,attr"`
-	Source string `xml:"source"`
-	Target string `xml:"target"`
-	Note   string `xml:"note"`
-}
-
-type ValidationErrorCode int
-
-const (
-	UnsupportedVersion ValidationErrorCode = iota
-	MissingOriginalAttribute
-	MissingSourceLanguage
-	MissingTargetLanguage
-	UnsupportedDatatype
-	InconsistentSourceLanguage
-	InconsistentTargetLanguage
-	MissingTransUnitID
-	MissingTransUnitSource
-	MissingTransUnitTarget
-)
-
-type ValidationError struct {
-	Code    ValidationErrorCode
-	Message string
-}
-
-func (ve ValidationError) Error() string {
-	code := "Unknown"
-	switch ve.Code {
-	case UnsupportedVersion:
-		code = "UnsupportedVersion"
-	case MissingOriginalAttribute:
-		code = "MissingOriginalAttribute"
-	case MissingSourceLanguage:
-		code = "MissingSourceLanguage"
-	case MissingTargetLanguage:
-		code = "MissingTargetLanguage"
-	case UnsupportedDatatype:
-		code = "UnsupportedDatatype"
-	case InconsistentSourceLanguage:
-		code = "InconsistentSourceLanguage"
-	case InconsistentTargetLanguage:
-		code = "InconsistentTargetLanguage"
-	case MissingTransUnitID:
-		code = "MissingTransUnitID"
-	case MissingTransUnitSource:
-		code = "MissingTransUnitSource"
-	case MissingTransUnitTarget:
-		code = "MissingTransUnitTarget"
+// Returns a new, empty xliff file.
+// datatype will always be "plaintext" and version will always be "1.2"
+func NewDocument(sl string, tl string) *Document {
+	file := File{
+		Datatype:       "plaintext",
+		SourceLanguage: sl,
+		TargetLanguage: tl,
+		Header:         Header{},
+		Body:           Body{},
 	}
-	return fmt.Sprintf("%s: %s", code, ve.Message)
+	return &Document{
+		Version: "1.2",
+		Files:   []File{file},
+	}
 }
 
 // Reads XLIFF Document from disk
-func FromFile(path string) (Document, error) {
+func FromFile(path string) (*Document, error) {
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
-		return Document{}, err
+		return &Document{}, err
 	}
 
 	var document Document
 	if err := xml.Unmarshal(data, &document); err != nil {
-		return Document{}, err
+		return &Document{}, err
 	}
 
-	return document, nil
+	return &document, nil
 }
 
 // Writes XLIFF Document to disk
@@ -140,7 +104,7 @@ func (d *Document) ToFile(path string) error {
 }
 
 // Returns true if the document passes some basic consistency checks.
-func (d Document) Validate() []ValidationError {
+func (d *Document) Validate() []ValidationError {
 	var errors []ValidationError
 
 	// Make sure the document is a version we understand
@@ -231,7 +195,7 @@ func (d Document) Validate() []ValidationError {
 
 // Returns true if all translation units in all files have both a
 // non-empty source and target.
-func (d Document) IsComplete() bool {
+func (d *Document) IsComplete() bool {
 	for _, file := range d.Files {
 		for _, transUnit := range file.Body.TransUnits {
 			if transUnit.Source == "" || transUnit.Target == "" {
@@ -242,11 +206,125 @@ func (d Document) IsComplete() bool {
 	return true
 }
 
-func (d Document) File(original string) (File, bool) {
+// finds a specific File within a document
+func (d *Document) File(original string) (File, bool) {
 	for _, file := range d.Files {
 		if file.Original == original {
 			return file, true
 		}
 	}
 	return File{}, false
+}
+
+// Adds a TransUnit to the last File within a Document
+//
+// The first optional argument is the target, the second optional argument is a note
+func (d *Document) AddTransUnit(source string, opts ...func(*TransUnit)) error {
+	if len(d.Files) == 0 {
+		return errors.New("document does not contain a file")
+	}
+
+	lastId, ok := d.lastId()
+	if !ok {
+		return errors.New("could not parse last TransUnit ID")
+	}
+
+	numId, err := strconv.Atoi(lastId)
+	if err != nil {
+		return errors.New(fmt.Sprint("last TransUnit ID is not a number:", lastId))
+	}
+
+	tu := TransUnit{
+		ID:     strconv.Itoa(numId + 1),
+		Source: source,
+	}
+
+	for _, opt := range opts {
+		opt(&tu)
+	}
+
+	file := &d.Files[len(d.Files)-1]
+	file.Body.TransUnits = append(file.Body.TransUnits, tu)
+
+	return nil
+}
+
+// Returns the last ID of the last File
+func (d *Document) lastId() (string, bool) {
+	if len(d.Files) == 0 {
+		return "", false
+	}
+	file := d.Files[len(d.Files)-1]
+	if len(file.Body.TransUnits) == 0 {
+		return "-1", true
+	}
+	last := file.Body.TransUnits[len(file.Body.TransUnits)-1]
+
+	return last.ID, true
+}
+
+type ValidationErrorCode int
+
+const (
+	UnsupportedVersion ValidationErrorCode = iota
+	MissingOriginalAttribute
+	MissingSourceLanguage
+	MissingTargetLanguage
+	UnsupportedDatatype
+	InconsistentSourceLanguage
+	InconsistentTargetLanguage
+	MissingTransUnitID
+	MissingTransUnitSource
+	MissingTransUnitTarget
+)
+
+type ValidationError struct {
+	Code    ValidationErrorCode
+	Message string
+}
+
+func (ve ValidationError) Error() string {
+	code := "Unknown"
+	switch ve.Code {
+	case UnsupportedVersion:
+		code = "UnsupportedVersion"
+	case MissingOriginalAttribute:
+		code = "MissingOriginalAttribute"
+	case MissingSourceLanguage:
+		code = "MissingSourceLanguage"
+	case MissingTargetLanguage:
+		code = "MissingTargetLanguage"
+	case UnsupportedDatatype:
+		code = "UnsupportedDatatype"
+	case InconsistentSourceLanguage:
+		code = "InconsistentSourceLanguage"
+	case InconsistentTargetLanguage:
+		code = "InconsistentTargetLanguage"
+	case MissingTransUnitID:
+		code = "MissingTransUnitID"
+	case MissingTransUnitSource:
+		code = "MissingTransUnitSource"
+	case MissingTransUnitTarget:
+		code = "MissingTransUnitTarget"
+	}
+	return fmt.Sprintf("%s: %s", code, ve.Message)
+}
+
+type TransUnit struct {
+	ID     string `xml:"id,attr"`
+	Source string `xml:"source"`
+	Target string `xml:"target"`
+	Note   string `xml:"note"`
+}
+
+func WithNote(note string) func(*TransUnit) {
+	return func(t *TransUnit) {
+		t.Note = note
+	}
+}
+
+func WithTarget(target string) func(*TransUnit) {
+	return func(t *TransUnit) {
+		t.Target = target
+	}
 }
