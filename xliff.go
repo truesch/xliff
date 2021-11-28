@@ -10,26 +10,17 @@ import (
 	"io/ioutil"
 )
 
-type Tool struct {
-	ToolID      string `xml:"tool-id,attr"`
-	ToolName    string `xml:"tool-name,attr"`
-	ToolVersion string `xml:"tool-version,attr"`
-	BuildNum    string `xml:"build-num,attr"`
+type DocumentExport struct {
+	Document
+	XMLName        xml.Name `xml:"xliff"`
+	Xmlns          string   `xml:"xmlns,attr"`
+	Xsi            string   `xml:"xmlns:xsi,attr"`
+	SchemaLocation string   `xml:"xsi:schemaLocation,attr"`
 }
 
-type Header struct {
-	Tool Tool `xml:"tool"`
-}
-
-type TransUnit struct {
-	ID     string `xml:"id,attr"`
-	Source string `xml:"source"`
-	Target string `xml:"target"`
-	Note   string `xml:"note"`
-}
-
-type Body struct {
-	TransUnits []TransUnit `xml:"trans-unit"`
+type Document struct {
+	Version string `xml:"version,attr"`
+	Files   []File `xml:"file"`
 }
 
 type File struct {
@@ -41,9 +32,26 @@ type File struct {
 	Body           Body   `xml:"body"`
 }
 
-type Document struct {
-	Version string `xml:"version,attr"`
-	Files   []File `xml:"file"`
+type Header struct {
+	Tool Tool `xml:"tool"`
+}
+
+type Tool struct {
+	ToolID      string `xml:"tool-id,attr"`
+	ToolName    string `xml:"tool-name,attr"`
+	ToolVersion string `xml:"tool-version,attr"`
+	BuildNum    string `xml:"build-num,attr"`
+}
+
+type Body struct {
+	TransUnits []TransUnit `xml:"trans-unit"`
+}
+
+type TransUnit struct {
+	ID     string `xml:"id,attr"`
+	Source string `xml:"source"`
+	Target string `xml:"target"`
+	Note   string `xml:"note"`
 }
 
 type ValidationErrorCode int
@@ -110,11 +118,18 @@ func FromFile(path string) (Document, error) {
 
 // Writes XLIFF Document to disk
 func ToFile(path string, document *Document) error {
+	xliff := &DocumentExport{
+		Document:       *document,
+		Xmlns:          "urn:oasis:names:tc:xliff:document:1.2",
+		Xsi:            "http://www.w3.org/2001/XMLSchema-instance",
+		SchemaLocation: "urn:oasis:names:tc:xliff:document:1.2 http://docs.oasis-open.org/xliff/v1.2/os/xliff-core-1.2-strict.xsd",
+	}
 
-	data, err := xml.Marshal(document)
+	data, err := xml.Marshal(xliff)
 	if err != nil {
 		return err
 	}
+	data = []byte(xml.Header + string(data))
 
 	err = ioutil.WriteFile(path, data, 0664)
 	if err != nil {
